@@ -116,7 +116,7 @@ class SearchViewModel @Inject constructor(
             _allTeams.value.forEach { team ->
                 if (team.name.contains(query, ignoreCase = true) ||
                     team.shortName.contains(query, ignoreCase = true) ||
-                    team.teamCode.contains(query, ignoreCase = true)
+                    team.teamCode?.contains(query, ignoreCase = true) == true
                 ) {
                     results.add(
                         SearchItem(
