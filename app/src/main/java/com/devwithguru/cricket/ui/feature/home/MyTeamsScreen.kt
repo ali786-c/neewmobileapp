@@ -23,7 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.devwithguru.cricket.ui.viewmodels.TeamViewModel
+import com.devwithguru.cricket.ui.feature.team.TeamViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,7 +135,7 @@ fun MyTeamsScreen(
                     items(teams) { team ->
                         TeamCard(
                             team = team,
-                            onClick = { onNavigateToTeamDetail(team.id.toString()) }
+                            onClick = { onNavigateToTeamDetail(team.id) }
                         )
                     }
                 }
