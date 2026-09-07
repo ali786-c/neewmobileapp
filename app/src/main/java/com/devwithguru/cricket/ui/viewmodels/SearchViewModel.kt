@@ -98,8 +98,7 @@ class SearchViewModel @Inject constructor(
             // Search players
             _allPlayers.value.forEach { player ->
                 if (player.name.contains(query, ignoreCase = true) ||
-                    player.role.contains(query, ignoreCase = true) ||
-                    player.city?.contains(query, ignoreCase = true) == true
+                    player.role.contains(query, ignoreCase = true)
                 ) {
                     val teamName = _allTeams.value.find { it.id == player.teamId }?.name ?: "No team"
                     results.add(
