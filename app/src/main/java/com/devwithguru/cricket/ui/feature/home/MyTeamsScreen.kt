@@ -137,7 +137,7 @@ fun MyTeamsScreen(
                     items(teams) { team ->
                         TeamCard(
                             team = team,
-                            onClick = { onNavigateToTeamDetail(team.id) }
+                            onClick = { onNavigateToTeamDetail(team.id.toString()) }
                         )
                     }
                 }
