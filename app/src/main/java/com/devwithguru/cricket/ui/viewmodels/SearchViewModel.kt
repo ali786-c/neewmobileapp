@@ -132,7 +132,7 @@ class SearchViewModel @Inject constructor(
             // Search tournaments
             _allTournaments.value.forEach { tournament ->
                 if (tournament.name.contains(query, ignoreCase = true) ||
-                    tournament.city?.contains(query, ignoreCase = true) == true ||
+                    tournament.city.contains(query, ignoreCase = true) ||
                     tournament.season.contains(query, ignoreCase = true)
                 ) {
                     results.add(
@@ -140,7 +140,7 @@ class SearchViewModel @Inject constructor(
                             id = tournament.id,
                             type = "tournament",
                             title = tournament.name,
-                            subtitle = "${tournament.city ?: "Unknown"} • ${tournament.status}"
+                            subtitle = "${tournament.city} • ${tournament.status}"
                         )
                     )
                 }
