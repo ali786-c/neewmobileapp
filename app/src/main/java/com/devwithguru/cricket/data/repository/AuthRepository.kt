@@ -18,9 +18,15 @@ import javax.inject.Singleton
  * Uses EncryptedSharedPreferences for secure token storage (AES-256 encryption).
  * Falls back to regular SharedPreferences if encryption setup fails (e.g., no hardware keystore).
  */
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+import com.devwithguru.cricket.data.db.dao.UserProfileDao
+import com.devwithguru.cricket.data.db.entity.UserProfileEntity
+
 @Singleton
 class AuthRepository @Inject constructor(
     private val apiService: ApiService,
+    private val userProfileDao: UserProfileDao,
     @ApplicationContext private val context: Context
 ) {
     private val prefs: SharedPreferences by lazy {
@@ -85,6 +91,34 @@ class AuthRepository @Inject constructor(
     // ─── API Calls ─────────────────────────────────────────
 
     /**
+     * Register with name, email, password. Returns LoginResponse on success.
+     */
+    suspend fun register(name: String, email: String, password: String): Result<LoginResponse> {
+        return try {
+            val response = apiService.register(
+                com.devwithguru.cricket.data.api.RegisterRequest(name = name, email = email, password = password)
+            )
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    // Save token
+                    saveToken(body.token)
+                    // Save user data
+                    saveUserData(body.data.id, body.data.name, body.data.email, body.data.roles)
+                    Result.success(body)
+                } else {
+                    Result.failure(Exception("Empty response from server"))
+                }
+            } else {
+                val errorMsg = response.errorBody()?.string() ?: "Registration failed"
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Login with email/password. Returns LoginResponse on success.
      */
     suspend fun login(email: String, password: String): Result<LoginResponse> {
@@ -138,13 +172,53 @@ class AuthRepository @Inject constructor(
     /**
      * Update player profile.
      */
+    /**
+     * Update player profile (Multipart).
+     */
     suspend fun updateProfile(request: UpdateProfileRequest): Result<com.devwithguru.cricket.data.api.ProfileData> {
         return try {
             val token = getToken() ?: return Result.failure(Exception("Not logged in"))
-            val response = apiService.updateProfile(token, request)
+            
+            // Convert strings to RequestBody
+            val fullName = request.full_name.toRequestBody("text/plain".toMediaTypeOrNull())
+            val playingRole = request.playing_role?.toRequestBody("text/plain".toMediaTypeOrNull())
+            val battingStyle = request.batting_style?.toRequestBody("text/plain".toMediaTypeOrNull())
+            val bowlingStyle = request.bowling_style?.toRequestBody("text/plain".toMediaTypeOrNull())
+            val city = request.city?.toRequestBody("text/plain".toMediaTypeOrNull())
+            val bio = request.bio?.toRequestBody("text/plain".toMediaTypeOrNull())
+            // Photo is skipped for now in this wrapper, can be passed if needed
+            
+            val response = apiService.updateProfile(
+                token = token,
+                fullName = fullName,
+                playingRole = playingRole,
+                battingStyle = battingStyle,
+                bowlingStyle = bowlingStyle,
+                city = city,
+                bio = bio,
+                photo = null
+            )
+            
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
+                    // Update Room DB
+                    userProfileDao.insertOrUpdate(
+                        UserProfileEntity(
+                            id = body.data.id,
+                            userId = body.data.user_id,
+                            fullName = body.data.full_name ?: "",
+                            phone = body.data.phone,
+                            city = body.data.city,
+                            playingRole = body.data.playing_role,
+                            battingStyle = body.data.batting_style,
+                            bowlingStyle = body.data.bowling_style,
+                            photoPath = body.data.photo_path,
+                            bio = body.data.bio,
+                            isActive = body.data.is_active,
+                            updatedAt = System.currentTimeMillis() // Simple epoch
+                        )
+                    )
                     Result.success(body.data)
                 } else {
                     Result.failure(Exception("Empty response"))

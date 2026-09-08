@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val navigationViewModel = remember { NavigationViewModel() }
+                    val navigationViewModel: NavigationViewModel = hiltViewModel()
                     val currentScreen = navigationViewModel.currentScreen
                     val navigationStack = navigationViewModel.navigationStack
                     var loggedInEmail by remember { mutableStateOf("") }
@@ -91,11 +91,22 @@ class MainActivity : ComponentActivity() {
                             LoginScreen(
                                 onLoginSuccess = { email ->
                                     loggedInEmail = email
-                                    navigationViewModel.navigateBack()
+                                    navigationViewModel.clearAndNavigateTo(Screen.Home)
                                     Toast.makeText(context, String.format(msgLoggedInFormat, email), Toast.LENGTH_SHORT).show()
                                 },
                                 onNavigateToRegister = {
-                                    navigationViewModel.navigateTo(Screen.Onboarding)
+                                    navigationViewModel.navigateTo(Screen.Register)
+                                }
+                            )
+                        }
+                        Screen.Register -> {
+                            com.devwithguru.cricket.ui.feature.auth.RegisterScreen(
+                                onRegisterSuccess = {
+                                    navigationViewModel.clearAndNavigateTo(Screen.Home)
+                                    Toast.makeText(context, "Registration successful!", Toast.LENGTH_SHORT).show()
+                                },
+                                onNavigateToLogin = {
+                                    navigationViewModel.navigateBack()
                                 }
                             )
                         }

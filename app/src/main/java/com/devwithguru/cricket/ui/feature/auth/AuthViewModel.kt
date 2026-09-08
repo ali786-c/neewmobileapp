@@ -71,7 +71,31 @@ class AuthViewModel @Inject constructor(
             )
         }
     }
+    fun register(name: String, email: String, password: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
+            val result = authRepository.register(name, email, password)
+
+            result.fold(
+                onSuccess = { response ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isLoggedIn = true,
+                        userName = response.data.name,
+                        userEmail = response.data.email,
+                        error = null
+                    )
+                },
+                onFailure = { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = e.message ?: "Registration failed."
+                    )
+                }
+            )
+        }
+    }
     /**
      * Check if we can auto-login from cache (no internet needed).
      */
